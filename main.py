@@ -1,38 +1,36 @@
 from fastapi import FastAPI, Form
+from openpyxl import Workbook, load_workbook
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
-import sqlite3
-from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # السماح بالوصول من أي مصدر. يفضل تقييده في الإنتاج
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# تعيين المسار إلى المجلد الحالي
 templates = Jinja2Templates(directory=".")
 
-# إنشاء قاعدة البيانات وتهيئتها إذا لم تكن موجودة
-def init_db():
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS submissions (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# تحديد مسار ملف Excel
+file_path = "data.xlsx"
 
-init_db()
+# دالة لحفظ البيانات في ملف Excel
+def save_data_to_excel(name, email):
+    if os.path.exists(file_path):
+        # إذا كان الملف موجودًا، يتم تحميله
+        workbook = load_workbook(file_path)
+        sheet = workbook.active
+    else:
+        # إذا لم يكن الملف موجودًا، يتم إنشاؤه وإضافة العناوين
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet['A1'] = "Name"
+        sheet['B1'] = "Email"
+    
+    # إيجاد الصف التالي الفارغ وإضافة البيانات
+    next_row = sheet.max_row + 1
+    sheet[f'A{next_row}'] = name
+    sheet[f'B{next_row}'] = email
+    
+    # حفظ الملف
+    workbook.save(file_path)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_form(request: Request):
@@ -40,12 +38,5 @@ async def read_form(request: Request):
 
 @app.post("/submit/")
 async def handle_form(name: str = Form(...), email: str = Form(...)):
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO submissions (name, email) VALUES (?, ?)
-    ''', (name, email))
-    conn.commit()
-    conn.close()
-
-    return {"message": "Data stored successfully"}
+    save_data_to_excel(name, email)
+    return {"message": "تم حفظ البيانات بنجاح"}
