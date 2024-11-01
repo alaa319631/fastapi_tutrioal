@@ -4,17 +4,20 @@ from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 import os
 from openpyxl import Workbook, load_workbook
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
-from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
-  CORSMiddleware,
-  allow_origins=["*"],  # يسمح بالوصول من أي مصدر. قم بتقييد هذا في الإنتاج
-  allow_credentials=True,
-  allow_methods=["*"],
-  allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],  # يسمح بالوصول من أي مصدر. قم بتقييد هذا في الإنتاج
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
-templates = Jinja2Templates(directory="templates")
+
+# قم بتعيين المسار إلى المجلد الحالي
+templates = Jinja2Templates(directory=".")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_form(request: Request):
@@ -46,4 +49,3 @@ async def handle_form(name: str = Form(...), email: str = Form(...)):
     workbook.save(file_path)
 
     return {"message": "Data stored successfully"}
-
