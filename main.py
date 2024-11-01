@@ -8,13 +8,13 @@ import os
 app = FastAPI()
 templates = Jinja2Templates(directory=".")
 
-# تحديد مسار ملف Excel
-file_path = "data.xlsx"
+# تحديد مسار ملف Excel في نفس مجلد التطبيق
+file_path = os.path.join(os.path.dirname(__file__), "data.xlsx")
 
 # دالة لحفظ البيانات في ملف Excel
 def save_data_to_excel(name, email):
+    # إذا كان الملف موجودًا، يتم تحميله
     if os.path.exists(file_path):
-        # إذا كان الملف موجودًا، يتم تحميله
         workbook = load_workbook(file_path)
         sheet = workbook.active
     else:
@@ -23,12 +23,12 @@ def save_data_to_excel(name, email):
         sheet = workbook.active
         sheet['A1'] = "Name"
         sheet['B1'] = "Email"
-    
+
     # إيجاد الصف التالي الفارغ وإضافة البيانات
     next_row = sheet.max_row + 1
     sheet[f'A{next_row}'] = name
     sheet[f'B{next_row}'] = email
-    
+
     # حفظ الملف
     workbook.save(file_path)
 
